@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
 // Register user
@@ -10,8 +11,11 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Todos los campos son obligatorios' });
     }
 
-    // Create user
-    const newUser = await User.create({ username, email, password });
+    const salt = await bcrypt.genSalt(10); 
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // create user
+    const newUser = await User.create({ username, email, password: hashedPassword });
 
     res.status(201).json({ message: 'Usuario registrado con éxito', user: newUser });
   } catch (error) {
@@ -26,7 +30,13 @@ const loginUser = async (req, res) => {
   try {
     const user = await User.findOne({ where: { email } });
 
-    if (!user || user.password !== password) {
+    if (!user) {
+      return res.status(401).json({ message: 'Credenciales inválidas' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
