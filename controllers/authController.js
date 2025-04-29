@@ -1,5 +1,11 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const bcrypt = require('bcrypt');
+
+const isMatch=await bcrypt.compare(password,user.password);
+if(!user || !isMatch){
+return res.status(401).json({message: 'Credenciales inváñidad'});
+}
 
 // Register user
 const registerUser = async (req, res) => {
