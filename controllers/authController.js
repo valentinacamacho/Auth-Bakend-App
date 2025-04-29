@@ -1,11 +1,6 @@
-const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
-
-const isMatch=await bcrypt.compare(password,user.password);
-if(!user || !isMatch){
-return res.status(401).json({message: 'Credenciales inváñidad'});
-}
+const jwt = require('jsonwebtoken');
 
 // Register user
 const registerUser = async (req, res) => {
@@ -17,7 +12,7 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Todos los campos son obligatorios' });
     }
 
-    const salt = await bcrypt.genSalt(10); 
+    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // create user
@@ -36,7 +31,7 @@ const loginUser = async (req, res) => {
   try {
     const user = await User.findOne({ where: { email } });
 
-    if (!user) {
+    if (!user || user.password !== password) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
@@ -46,10 +41,21 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
-    res.status(200).json({ message: 'Inicio de sesión exitoso', user });
+    const token = jwt.sign(
+      { id: user.id },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.status(200).json({
+      message: 'Inicio de sesión exitoso',
+      user,
+      token
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error al iniciar sesión', error: error.message });
   }
+
 };
 
 module.exports = {
